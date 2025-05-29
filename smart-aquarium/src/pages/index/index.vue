@@ -1,15 +1,24 @@
 <template>
   <view class="index">
     <nut-navbar title="智能鱼缸系统"></nut-navbar>
-    <nut-button type="primary" @click="onClick">按钮</nut-button>
-    <nut-toast v-model:visible="show" msg="你成功了" />
+    <StatusCard :status="data.status" @reconnect="reconnect" />
   </view>
 </template>
 
 <script setup>
-import { ref } from "vue";
-const show = ref(false);
-const onClick = () => {
-  show.value = true;
+import { reactive, ref } from "vue";
+import StatusCard from "../../components/StatusCard";
+
+const data = reactive({
+  status: "error",
+});
+
+const reconnect = () => {
+  data.status = "reconnecting";
+  setTimeout(() => {
+    data.status = "success";
+  }, 2000);
 };
 </script>
+
+<style scoped></style>
