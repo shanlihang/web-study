@@ -3,6 +3,7 @@
     <nut-navbar title="智能鱼缸系统"></nut-navbar>
     <StatusCard :status="data.status" @reconnect="reconnect" />
     <LiveTime />
+    <ControlPanel />
   </view>
 </template>
 
@@ -10,6 +11,7 @@
 import { reactive, ref } from "vue";
 import StatusCard from "../../components/StatusCard";
 import LiveTime from "../../components/LiveTime";
+import ControlPanel from "../../components/ControlPanel";
 
 const data = reactive({
   status: "error",
