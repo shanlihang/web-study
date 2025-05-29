@@ -29,7 +29,7 @@
       position="bottom"
       closeable
       round
-      :style="{ height: '32%' }"
+      :style="{ height: '350px' }"
     >
       <view class="drawer-title">阈值设置</view>
       <view class="cell">
@@ -52,9 +52,23 @@
           @change="change"
         ></nut-range>
       </view>
+      <view class="cell">
+        <view class="label">光照</view>
+        <nut-range
+          v-model="data.lightRange"
+          range
+          :max="1000"
+          :min="0"
+          @change="change"
+        ></nut-range>
+      </view>
       <view class="btn"
-        ><nut-button plain type="primary">取消</nut-button>
-        <nut-button plain type="info">确定</nut-button></view
+        ><nut-button plain type="primary" @click="show = false"
+          >取消</nut-button
+        >
+        <nut-button plain type="info" @click="show = false"
+          >确定</nut-button
+        ></view
       >
     </nut-popup>
   </view>
@@ -71,6 +85,7 @@ const data = reactive({
   feed: false,
   temperatureRange: [20, 40],
   tdsRange: [100, 400],
+  lightRange: [100, 300],
 });
 
 const change = (value) => {
