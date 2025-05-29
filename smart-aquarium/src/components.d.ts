@@ -8,10 +8,15 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     NutButton: typeof import('@nutui/nutui-taro')['Button']
+    NutCell: typeof import('@nutui/nutui-taro')['Cell']
+    NutCellGroup: typeof import('@nutui/nutui-taro')['CellGroup']
     NutGrid: typeof import('@nutui/nutui-taro')['Grid']
     NutGridItem: typeof import('@nutui/nutui-taro')['GridItem']
     NutNavbar: typeof import('@nutui/nutui-taro')['Navbar']
     NutNoticebar: typeof import('@nutui/nutui-taro')['Noticebar']
+    NutPopup: typeof import('@nutui/nutui-taro')['Popup']
+    NutRange: typeof import('@nutui/nutui-taro')['Range']
+    NutSwitch: typeof import('@nutui/nutui-taro')['Switch']
     NutToast: typeof import('@nutui/nutui-taro')['Toast']
     NutTrendArrow: typeof import('@nutui/nutui-taro')['TrendArrow']
   }
