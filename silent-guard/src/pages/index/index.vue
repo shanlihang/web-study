@@ -8,12 +8,6 @@
       <!-- 温度传感器 -->
       <div class="sensor-card">
         <div class="sensor-name">
-          <div
-            class="icon"
-            :style="{
-              backgroundImage: 'url(https://example.com/thermometer-icon.png)',
-            }"
-          />
           <span>温度</span>
         </div>
         <div class="sensor-value">
@@ -24,12 +18,6 @@
       <!-- 湿度传感器 -->
       <div class="sensor-card">
         <div class="sensor-name">
-          <div
-            class="icon"
-            :style="{
-              backgroundImage: 'url(https://example.com/humidity-icon.png)',
-            }"
-          />
           <span>湿度</span>
         </div>
         <div class="sensor-value">
@@ -40,10 +28,6 @@
       <!-- 一氧化碳传感器 -->
       <div class="sensor-card" :class="{ warning: coWarning }">
         <div class="sensor-name">
-          <div
-            class="icon"
-            :style="{ backgroundImage: 'url(https://example.com/co-icon.png)' }"
-          />
           <span>一氧化碳</span>
         </div>
         <div class="sensor-value">
@@ -55,12 +39,6 @@
       <!-- 二氧化碳传感器 -->
       <div class="sensor-card">
         <div class="sensor-name">
-          <div
-            class="icon"
-            :style="{
-              backgroundImage: 'url(https://example.com/radar-icon.png)',
-            }"
-          />
           <span>二氧化碳</span>
         </div>
         <div class="sensor-value">{{ co2 }}<span class="unit">ppm</span></div>
@@ -81,11 +59,13 @@
         {{ radar ? "检测到人员" : "无人活动" }}
       </span>
     </div>
+    <Tabs />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from "vue";
+import Tabs from "../Tabs";
 
 const temperature = ref(24.5);
 const humidity = ref(65);
@@ -115,16 +95,15 @@ onUnmounted(() => {
 <style scoped>
 .container {
   padding: 24px;
+  overflow: hidden;
   min-height: 100vh;
   background: linear-gradient(160deg, #0a0e17 0%, #1a2130 100%);
   font-family: "Roboto", "PingFang SC", sans-serif;
   color: #e0e0e0;
   font-size: 16px;
-  line-height: 1.6;
 }
 
 .header {
-  margin-bottom: 32px;
   text-align: center;
 }
 
@@ -154,7 +133,7 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-  margin-bottom: 24px;
+  margin: 24px 0 12px;
 }
 
 .sensor-card {
@@ -179,14 +158,6 @@ onUnmounted(() => {
   margin-bottom: 8px;
   display: flex;
   align-items: center;
-}
-
-.sensor-card .sensor-name .icon {
-  width: 24px;
-  height: 24px;
-  margin-right: 8px;
-  background-size: contain;
-  background-repeat: no-repeat;
 }
 
 .sensor-card .sensor-value {
