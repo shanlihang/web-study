@@ -5,20 +5,32 @@
 
     <nut-grid :column-num="3" reverse>
       <nut-grid-item :border="false" text="水温(°C)">
-        <TrendArrow :number="10" status="high" />
+        <TrendArrow :number="Number(Temperature)" status="high" />
       </nut-grid-item>
       <nut-grid-item :border="false" text="水质(ppm)">
-        <TrendArrow :number="10" status="low" />
+        <TrendArrow :number="Number(TDS)" status="low" />
       </nut-grid-item>
       <nut-grid-item :border="false" text="光照(Lux)">
-        <TrendArrow :number="10" status="low" />
+        <TrendArrow :number="Number(LightIntensity)" status="low" />
       </nut-grid-item>
     </nut-grid>
   </view>
 </template>
 
-<script setup>
-import TrendArrow from "../TrendArrow";
+<script setup lang="ts">
+import TrendArrow from "../TrendArrow/index.vue";
+interface Props {
+  TDS: string,
+  Temperature: string,
+  LightIntensity: string,
+}
+const props = withDefaults(defineProps<Props>(), {
+  TDS: '0',
+  Temperature: '0',
+  LightIntensity: '0',
+});
+console.log(111,props);
+
 </script>
 
 <style scoped>

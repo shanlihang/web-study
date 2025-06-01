@@ -27,6 +27,9 @@
     "dev:qq": "npm run build:qq -- --watch",
     "dev:quickapp": "npm run build:quickapp -- --watch"
   },
+  "parserOptions": {
+    "requireConfigFile": false
+  },
   "browserslist": [
     "last 3 versions",
     "Android >= 4.1",
@@ -52,6 +55,7 @@
     "@tarojs/runtime": "4.1.1",
     "@tarojs/shared": "4.1.1",
     "@tarojs/taro": "4.1.1",
+    "axios": "^1.9.0",
     "vue": "^3.3.0"
   },
   "devDependencies": {

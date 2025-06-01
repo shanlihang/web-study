@@ -1,27 +1,35 @@
 <template>
   <view class="status" :class="statusClass">
     <view class="status-text"
-      ><IconFont
-        :name="status === 'reconnecting' ? 'loading' : 'link'"
+      >
+      <IconFont
+        v-if="status === 1"
+        name="success"
+        color="#fff"
+        class="icon"
+      ></IconFont>
+      <IconFont
+        v-if="status === 0"
+        name="tips"
         color="#fff"
         class="icon"
       ></IconFont>
       {{
-        status === "success"
-          ? "设备已连接"
-          : status === "error"
-          ? "设备连接失败，请重试"
+        status === 1
+          ? "在线"
+          : status === 0
+          ? "离线"
           : "设备重连中..."
       }}</view
     >
-    <nut-button
-      v-if="status === 'error'"
+    <!-- <nut-button
+      v-if="status === 0"
       plain
       type="primary"
       size="mini"
       @click="emit('reconnect')"
       >重连</nut-button
-    >
+    > -->
   </view>
 </template>
 
@@ -30,12 +38,12 @@ import { computed } from "vue";
 import { IconFont } from "@nutui/icons-vue-taro";
 
 interface Props {
-  status: "success" | "error" | "reconnecting";
+  status: 0 | 1 | 2 ;
   onReconnect?: () => void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  status: "success",
+  status: 0,
 });
 
 const emit = defineEmits(["reconnect"]);
@@ -43,11 +51,11 @@ const emit = defineEmits(["reconnect"]);
 // 计算样式类名
 const statusClass = computed(() => {
   return {
-    "status-success": props.status === "success",
-    "status-error": props.status === "error",
-    "status-reconnecting": props.status === "reconnecting",
+    "status-success": props.status === 1,
+    "status-error": props.status === 0,
   };
 });
+
 </script>
 <style scoped>
 .status {

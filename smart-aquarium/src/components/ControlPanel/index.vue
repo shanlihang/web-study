@@ -9,7 +9,7 @@
     <nut-cell-group>
       <nut-cell title="升温">
         <template #link>
-          <nut-switch v-model="data.water" />
+          <nut-switch v-model="data.water" @change="(value) => change(value, 'Temperature')"/>
         </template>
       </nut-cell>
       <nut-cell title="光照">
@@ -74,9 +74,18 @@
   </view>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, ref } from "vue";
-
+interface Props {
+  TDS: string,
+  Temperature: string,
+  LightIntensity: string,
+}
+const props = withDefaults(defineProps<Props>(), {
+  TDS: '0',
+  Temperature: '0',
+  LightIntensity: '0',
+});
 const show = ref(false);
 
 const data = reactive({
@@ -87,9 +96,10 @@ const data = reactive({
   tdsRange: [100, 400],
   lightRange: [100, 300],
 });
-
-const change = (value) => {
-  console.log(value);
+const emit = defineEmits(["heatUp"]);
+const change = (value, type) => {
+  console.log(value, type);
+  emit('heatUp', type)
 };
 </script>
 
