@@ -1,5 +1,6 @@
 import { createApp } from "vue";
 import { IconFont } from "@nutui/icons-vue-taro";
+import { Toast } from '@nutui/nutui-taro'
 import "./app.scss";
 
 const App = createApp({
@@ -8,5 +9,5 @@ const App = createApp({
 });
 
 App.use(IconFont as any);
-
+App.use(Toast)
 export default App;
