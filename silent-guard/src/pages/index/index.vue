@@ -11,7 +11,7 @@
           <span>温度</span>
         </div>
         <div class="sensor-value">
-          {{ temperature }}<span class="unit">°C</span>
+          {{ data.temperature }}<span class="unit">°C</span>
         </div>
       </div>
 
@@ -21,7 +21,7 @@
           <span>湿度</span>
         </div>
         <div class="sensor-value">
-          {{ humidity }}<span class="unit">%</span>
+          {{ data.humidity }}<span class="unit">%</span>
         </div>
       </div>
 
@@ -31,7 +31,7 @@
           <span>一氧化碳</span>
         </div>
         <div class="sensor-value">
-          {{ co }}<span class="unit">ppm</span>
+          {{ data.co }}<span class="unit">ppm</span>
           <span v-if="coWarning" class="warning-pulse">⚠️</span>
         </div>
       </div>
@@ -41,22 +41,26 @@
         <div class="sensor-name">
           <span>二氧化碳</span>
         </div>
-        <div class="sensor-value">{{ co2 }}<span class="unit">ppm</span></div>
+        <div class="sensor-value">
+          {{ data.co2 }}<span class="unit">ppm</span>
+        </div>
       </div>
     </div>
 
     <!-- 状态卡片 -->
     <div class="status-card">
       <span class="status-name">WiFi连接</span>
-      <span :class="['status-value', wifi ? 'active' : 'inactive']">
-        {{ wifi ? "已连接" : "未连接" }}
+      <span
+        :class="['status-value', data.status === 1 ? 'active' : 'inactive']"
+      >
+        {{ data.status === 1 ? "已连接" : "未连接" }}
       </span>
     </div>
 
     <div class="status-card">
       <span class="status-name">雷达感应</span>
-      <span :class="['status-value', radar ? 'active' : 'inactive']">
-        {{ radar ? "检测到人员" : "无人活动" }}
+      <span :class="['status-value', havePeople ? 'active' : 'inactive']">
+        {{ havePeople ? "检测到人员" : "无人活动" }}
       </span>
     </div>
     <Tabs />
@@ -64,31 +68,107 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed, reactive } from "vue";
 import Tabs from "../Tabs";
+import axios from "axios";
 
-const temperature = ref(24.5);
-const humidity = ref(65);
-const co = ref(2.4);
-const co2 = ref(2.4);
-const wifi = ref(true);
-const radar = ref(false);
+// 配置信息
+const CONFIG = {
+  PRODUCT_ID: "4u2d7xdNrE", // 产品ID
+  DEVICE_NAME: "environment_monitor_device", // 设备名称
+  API_KEY:
+    "version=2018-10-31&res=products%2F4u2d7xdNrE%2Fdevices%2Fenvironment_monitor_device&et=1906444415&method=md5&sign=hfmzwARWIBViMTB9wBAsvQ%3D%3D",
+};
 
-const coWarning = computed(() => co.value > 2.8);
+const intervalId = ref(null);
+const timeRange = ref(5000);
 
-let interval;
+const data = reactive({
+  status: 0,
+  temperature: "0",
+  humidity: "0",
+  co: "0",
+  co2: "0",
+  people: "false",
+});
+const coWarning = computed(() => data.co > 2.8);
+const havePeople = computed(() => data.people === "true");
+
+// 获取设备在线状态
+const getDeviceStatus = async () => {
+  try {
+    const response = await axios({
+      method: "GET",
+      url: " https://iot-api.heclouds.com/device/detail",
+      params: {
+        product_id: CONFIG.PRODUCT_ID,
+        device_name: CONFIG.DEVICE_NAME,
+      },
+      headers: {
+        Authorization: CONFIG.API_KEY,
+      },
+    });
+    if (response.data.code === 0) {
+      data.status = response.data.data.status;
+    } else {
+      throw new Error(response.data.msg || "获取设备状态失败");
+    }
+  } catch (error) {
+    console.error("获取设备状态失败:", error);
+    data.status = 0;
+  }
+};
+
+// 查询设备属性
+const queryDeviceProperty = async () => {
+  try {
+    const response = await axios({
+      method: "GET",
+      url: `https://iot-api.heclouds.com/thingmodel/query-device-property`,
+      params: {
+        product_id: CONFIG.PRODUCT_ID,
+        device_name: CONFIG.DEVICE_NAME,
+      },
+      headers: {
+        Authorization: CONFIG.API_KEY,
+      },
+    });
+    if (response.data.code === 0) {
+      data.temperature =
+        response.data.data.find((item) => item.identifier === "Temp")?.value ||
+        "0";
+      data.people =
+        response.data.data.find((item) => item.identifier === "People")
+          ?.value || false;
+      data.humidity =
+        response.data.data.find((item) => item.identifier === "Hum")?.value ||
+        "0";
+      data.co =
+        response.data.data.find((item) => item.identifier === "CO")?.value ||
+        "0";
+      data.co2 =
+        response.data.data.find((item) => item.identifier === "Gas")?.value ||
+        "0";
+    } else {
+      throw new Error(response.data.msg || "查询设备属性失败");
+    }
+  } catch (error) {
+    console.error("查询设备属性失败:", error);
+  }
+};
+
 onMounted(() => {
-  interval = setInterval(() => {
-    temperature.value = +(24 + Math.random() * 2).toFixed(1);
-    humidity.value = +(60 + Math.random() * 10).toFixed(0);
-    co.value = +(2 + Math.random()).toFixed(1);
-    co2.value = +(2 + Math.random()).toFixed(1);
-    radar.value = Math.random() > 0.7;
-  }, 3000);
+  getDeviceStatus();
+  queryDeviceProperty();
+  intervalId.value = setInterval(() => {
+    getDeviceStatus();
+    queryDeviceProperty();
+  }, timeRange.value);
 });
 
 onUnmounted(() => {
-  clearInterval(interval);
+  // 清理定时器，防止内存泄漏
+  clearInterval(intervalId.value);
 });
 </script>
 
