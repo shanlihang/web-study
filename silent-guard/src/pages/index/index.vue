@@ -1,53 +1,64 @@
 <template>
   <div class="container">
+    <nut-toast
+      msg="阈值更新成功"
+      v-model:visible="visible"
+      type="text"
+      cover="false"
+    />
     <div class="header">
       <span class="title">智能环境监测</span>
     </div>
-
     <div class="sensor-grid">
       <!-- 温度传感器 -->
-      <div class="sensor-card">
+      <div
+        class="sensor-card"
+        :class="{ warning: isOutOfRange('temperature') }"
+      >
         <div class="sensor-name">
           <span>温度</span>
         </div>
         <div class="sensor-value">
           {{ data.temperature }}<span class="unit">°C</span>
+          <span v-if="isOutOfRange('temperature')" class="warning-pulse"
+            >⚠️</span
+          >
         </div>
       </div>
 
       <!-- 湿度传感器 -->
-      <div class="sensor-card">
+      <div class="sensor-card" :class="{ warning: isOutOfRange('humidity') }">
         <div class="sensor-name">
           <span>湿度</span>
         </div>
         <div class="sensor-value">
-          {{ data.humidity }}<span class="unit">%</span>
+          {{ data.humidity }}<span class="unit">%RH</span>
+          <span v-if="isOutOfRange('humidity')" class="warning-pulse">⚠️</span>
         </div>
       </div>
 
       <!-- 一氧化碳传感器 -->
-      <div class="sensor-card" :class="{ warning: coWarning }">
+      <div class="sensor-card" :class="{ warning: isOutOfRange('co') }">
         <div class="sensor-name">
           <span>一氧化碳</span>
         </div>
         <div class="sensor-value">
           {{ data.co }}<span class="unit">ppm</span>
-          <span v-if="coWarning" class="warning-pulse">⚠️</span>
+          <span v-if="isOutOfRange('co')" class="warning-pulse">⚠️</span>
         </div>
       </div>
 
       <!-- 二氧化碳传感器 -->
-      <div class="sensor-card">
+      <div class="sensor-card" :class="{ warning: isOutOfRange('co2') }">
         <div class="sensor-name">
           <span>二氧化碳</span>
         </div>
         <div class="sensor-value">
           {{ data.co2 }}<span class="unit">ppm</span>
+          <span v-if="isOutOfRange('co2')" class="warning-pulse">⚠️</span>
         </div>
       </div>
     </div>
-
-    <!-- 状态卡片 -->
     <div class="status-card">
       <span class="status-name">WiFi连接</span>
       <span
@@ -56,20 +67,70 @@
         {{ data.status === 1 ? "已连接" : "未连接" }}
       </span>
     </div>
-
     <div class="status-card">
       <span class="status-name">雷达感应</span>
       <span :class="['status-value', havePeople ? 'active' : 'inactive']">
         {{ havePeople ? "检测到人员" : "无人活动" }}
       </span>
     </div>
-    <Tabs />
+    <div class="tab-header">
+      <div
+        :class="['tab-button', activeTab === 'control' ? 'active' : '']"
+        @click="activeTab = 'control'"
+      >
+        功能控制
+      </div>
+      <div
+        :class="['tab-button', activeTab === 'threshold' ? 'active' : '']"
+        @click="activeTab = 'threshold'"
+      >
+        阈值设置
+      </div>
+    </div>
+    <div class="tab-content">
+      <div v-if="activeTab === 'threshold'" class="form-section">
+        <div v-for="(item, key) in thresholds" :key="key" class="form-group">
+          <label>{{ keyLabels[key] }}</label>
+          <div class="inputs">
+            <input
+              type="number"
+              v-model.number="thresholdDraft[key].min"
+              placeholder="最小值"
+            />
+            <span>~</span>
+            <input
+              type="number"
+              v-model.number="thresholdDraft[key].max"
+              placeholder="最大值"
+            />
+          </div>
+        </div>
+        <button class="okBtn" @click="changeRange">确定</button>
+      </div>
+      <div v-else class="control-section">
+        <div class="control-card">
+          <p class="control-title">一键报警</p>
+          <button
+            class="alarm-button"
+            :class="{ active: alarmActive }"
+            @click="handleAlarm"
+          >
+            {{ alarmActive ? "已报警" : "启动报警" }}
+          </button>
+        </div>
+        <div class="status-card">
+          <span>当前状态：</span>
+          <span :class="alarmActive ? 'active' : 'inactive'">
+            {{ alarmActive ? "告警中" : "正常" }}
+          </span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, reactive } from "vue";
-import Tabs from "../Tabs";
+import { ref, onMounted, onUnmounted, computed, reactive, toRaw } from "vue";
 import axios from "axios";
 
 // 配置信息
@@ -83,6 +144,51 @@ const CONFIG = {
 const intervalId = ref(null);
 const timeRange = ref(5000);
 
+const visible = ref(false);
+
+const activeTab = ref("control");
+const alarmActive = ref(false);
+
+const thresholds = reactive({
+  temperature: { min: 26, max: 32 },
+  humidity: { min: 30, max: 60 },
+  co: { min: 0, max: 3 },
+  co2: { min: 400, max: 800 },
+});
+
+const thresholdDraft = reactive(JSON.parse(JSON.stringify(toRaw(thresholds))));
+
+const isOutOfRange = (key) => {
+  const val = Number(data[key]);
+  const { min, max } = thresholds[key];
+  return val < min || val > max;
+};
+
+const keyLabels = {
+  temperature: "温度 (°C)",
+  humidity: "湿度 (%RH)",
+  co: "一氧化碳 (ppm)",
+  co2: "二氧化碳 (ppm)",
+};
+
+const handleAlarm = () => {
+  if (!alarmActive.value) {
+    alarmActive.value = true;
+    setTimeout(() => {
+      alarmActive.value = false;
+    }, 3000);
+  }
+};
+
+const changeRange = () => {
+  Object.keys(thresholds).forEach((key) => {
+    thresholds[key].min = thresholdDraft[key].min;
+    thresholds[key].max = thresholdDraft[key].max;
+  });
+  visible.value = true;
+  activeTab.value = "control";
+};
+
 const data = reactive({
   status: 0,
   temperature: "0",
@@ -91,7 +197,6 @@ const data = reactive({
   co2: "0",
   people: "false",
 });
-const coWarning = computed(() => data.co > 2.8);
 const havePeople = computed(() => data.people === "true");
 
 // 获取设备在线状态
@@ -308,5 +413,135 @@ onUnmounted(() => {
 
 .warning-pulse {
   animation: pulse 1.5s infinite;
+}
+
+.tab-header {
+  width: 100%;
+  display: flex;
+  height: 70px;
+  border-radius: 12px;
+  overflow: hidden;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.tab-button {
+  width: 50%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ccc;
+  cursor: pointer;
+  font-size: 24px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tab-button.active {
+  background: #073ac7;
+  color: #fff;
+}
+
+.form-section,
+.control-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  background: rgba(30, 35, 50, 0.6);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.form-group.warning {
+  border-color: #ff4d4f;
+  color: #ff4d4f;
+}
+
+.form-group label {
+  font-size: 14px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.inputs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.inputs input {
+  flex: 1;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+}
+
+.inputs input::placeholder {
+  color: #aaa;
+}
+
+.control-card {
+  background: rgba(30, 35, 50, 0.6);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.control-title {
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.alarm-button {
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.alarm-button.active {
+  background: #ff4d4f;
+  box-shadow: 0 0 10px rgba(255, 77, 79, 0.6);
+}
+
+.status-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(30, 35, 50, 0.6);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.status-card .active {
+  color: #ff4d4f;
+}
+
+.status-card .inactive {
+  color: #52c41a;
+}
+
+.okBtn {
+  width: 80%;
+  margin-top: 20px;
+  background-color: transparent;
+  border: 1px solid #073ac7;
+  color: #073ac7;
 }
 </style>
