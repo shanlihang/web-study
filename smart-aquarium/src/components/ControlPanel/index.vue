@@ -101,7 +101,7 @@ const props = withDefaults(defineProps<Props>(), {
     },
   },
 });
-const control = ref(1);
+const control = ref(0);
 const emit = defineEmits(["changeRange", "heatUp", "autoChange"]);
 
 const show = ref(false);

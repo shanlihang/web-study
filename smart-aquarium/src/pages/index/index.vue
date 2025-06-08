@@ -43,7 +43,7 @@ const data = reactive({
   LightSwitch: false, // 光照开关
   Pump: false, // 水泵开关
   HeatSwitch: false, // 加热开关
-  control: 1,
+  control: 0,
 
 });
 
@@ -187,7 +187,7 @@ onUnmounted(() => {
 onMounted(() => {
   getDeviceStatus();
   queryDeviceProperty();
-  // startPolling();
+  startPolling();
 });
 </script>
 

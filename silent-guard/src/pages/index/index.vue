@@ -144,7 +144,6 @@ const keyLabels = {
 const handleAlarm = () => {
   if (!alarmActive.value) {
     alarmActive.value = true;
-    return;
     axios({
       method: "POST",
       url: `https://iot-api.heclouds.com/thingmodel/set-device-property`,
@@ -453,7 +452,7 @@ onUnmounted(() => {
   background: rgba(30, 35, 50, 0.6);
   border-radius: 12px;
   padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  /* border: 1px solid rgba(255, 255, 255, 0.05); */
 }
 
 .form-group.warning {
@@ -537,7 +536,7 @@ onUnmounted(() => {
 
 .okBtn {
   width: 80%;
-  margin-top: 20px;
+  margin-top: 40px;
   background-color: transparent;
   border: 1px solid #073ac7;
   color: #073ac7;

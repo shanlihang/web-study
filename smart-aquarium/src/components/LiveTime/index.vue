@@ -45,7 +45,7 @@ interface Props {
   };
 }
 const props = withDefaults(defineProps<Props>(), {
-  control: 1,
+  control: 0,
   data: {
     TDS: "0",
     Temperature: "0",
@@ -96,31 +96,50 @@ const isOutOfRange = (key) => {
 const change = (params) => {
   emit("heatUp", params);
 };
-console.log(props.control);
+// 暂存待更改的控制命令
+let pendingChange = {};
+let throttleTimer = null;
+
+// 封装节流 change 调用
+function scheduleChange(newChange) {
+  pendingChange = { ...pendingChange, ...newChange };
+
+  if (!throttleTimer) {
+    throttleTimer = setTimeout(() => {
+      if (Object.keys(pendingChange).length > 0) {
+        change(pendingChange);
+        pendingChange = {};
+      }
+      throttleTimer = null;
+    }, 1000); // 1 秒节流
+  }
+}
 
 watch(
   () => [props.data.TDS, props.data.Temperature, props.data.Light, props.data.LightSwitch, props.data.HeatSwitch, props.data.Pump, props.control],
   ([newTDS, newTemp, newLight, newLightSwitch, newHeatSwitch, newPump, newControl]) => {
 
     const { temperatureRange, tdsRange, lightRange } = props.rangeList;
-    if (props.control === 0) {
+    if (newControl === 0) {
       return; // 如果控制模式为手动，则不进行自动调整
     }
-    if (newLightSwitch && parseFloat(newTemp) < temperatureRange.min) {
-      change({ HeatSwitch: true }); // 启动加热
+    if (!newLightSwitch && parseFloat(newTemp) < temperatureRange.min) {
+      scheduleChange({ HeatSwitch: true });// 启动加热
     }
-    if (!newLightSwitch && parseFloat(newTemp) > temperatureRange.max) {
-      change({ HeatSwitch: false }); // 关闭加热
+    if (newLightSwitch && parseFloat(newTemp) > temperatureRange.max) {
+      scheduleChange({ HeatSwitch: false }); // 关闭加热
     }
     if (!newPump && parseFloat(newTDS) < tdsRange.min) {
-      change({ Pump: true }); // 启动循环泵
+      scheduleChange({ Pump: true }); // 启动循环泵
     }
-
-    if (!props.data.LightSwitch && parseFloat(newLight) > lightRange.min) {
-      change({ LightSwitch: true }); // 灯光是关闭状态并且大于min时启动光照
+    if (newPump && parseFloat(newTDS) > tdsRange.max) {
+      scheduleChange({ Pump: false }); // 启动循环泵
     }
-    if (props.data.LightSwitch && parseFloat(newLight) < lightRange.min) {
-      change({ LightSwitch: false }); // 灯光是开启状态并且小于min时关闭光照
+    if (!newLightSwitch && parseFloat(newLight) > lightRange.min) {
+      scheduleChange({ LightSwitch: true }); // 灯光是关闭状态并且大于min时启动光照
+    }
+    if (newLightSwitch && parseFloat(newLight) < lightRange.min) {
+      scheduleChange({ LightSwitch: false }); // 灯光是开启状态并且小于min时关闭光照
     }
   },
   { immediate: true }
