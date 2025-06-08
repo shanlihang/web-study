@@ -2,31 +2,14 @@
   <view class="index">
     <nut-navbar title="智能鱼缸系统"></nut-navbar>
     <StatusCard :status="data.status" @reconnect="reconnect" />
-    <LiveTime
-      :TDS="data.TDS"
-      :Temperature="data.Temperature"
-      :LightSwitch="data.LightSwitch"
-      :rangeList="rangeList"
-      @heatUp="(type) => heatUp(type)"
-    />
-    <ControlPanel
-      :TDS="data.TDS"
-      :Temperature="data.Temperature"
-      :LightSwitch="data.LightSwitch"
-      :Pump="data.Pump"
-      :HeatSwitch="data.HeatSwitch"
-      :rangeList="rangeList"
-      @changeRange="(newList) => changeRange(newList)"
-      @heatUp="(type) => heatUp(type)"
-    />
+    <LiveTime :control="data.control" :data="data" :rangeList="rangeList" @heatUp="(type) => heatUp(type)" />
+    <ControlPanel :TDS="data.TDS" :Temperature="data.Temperature" :LightSwitch="data.LightSwitch" :Pump="data.Pump"
+      :HeatSwitch="data.HeatSwitch" :rangeList="rangeList" @changeRange="(newList) => changeRange(newList)"
+      @heatUp="(type) => heatUp(type)" @autoChange="(val) => {
+        data.control = val;
+      }" />
   </view>
-  <nut-toast
-    :msg="state.msg"
-    v-model:visible="state.show"
-    :type="state.type"
-    @closed="onClosed"
-    :cover="state.cover"
-  />
+  <nut-toast :msg="state.msg" v-model:visible="state.show" :type="state.type" @closed="onClosed" :cover="state.cover" />
 </template>
 
 <script setup>
@@ -56,22 +39,26 @@ const data = reactive({
   status: 0, // 0: 离线, 1: 在线 2:未激活
   TDS: "0", // 水质
   Temperature: "0", // 水温
+  Light: "0", // 光照
   LightSwitch: false, // 光照开关
   Pump: false, // 水泵开关
   HeatSwitch: false, // 加热开关
+  control: 1,
+
 });
+
 const rangeList = reactive({
   temperatureRange: {
-    min: 20,
-    max: 40,
+    min: 0,
+    max: 30,
   },
   tdsRange: {
     min: 100,
     max: 500,
   },
   lightRange: {
-    min: 100,
-    max: 300,
+    min: 3000,
+    max: 5000,
   },
 });
 // 获取设备在线状态
@@ -118,6 +105,9 @@ const queryDeviceProperty = async () => {
         "0";
       data.Temperature =
         response.data.data.find((item) => item.identifier === "Temperature")
+          ?.value || "0";
+      data.Light =
+        response.data.data.find((item) => item.identifier === "Light")
           ?.value || "0";
       data.LightSwitch =
         response.data.data.find((item) => item.identifier === "LightSwitch")
@@ -197,7 +187,7 @@ onUnmounted(() => {
 onMounted(() => {
   getDeviceStatus();
   queryDeviceProperty();
-  startPolling();
+  // startPolling();
 });
 </script>
 

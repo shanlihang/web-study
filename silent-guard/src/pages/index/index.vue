@@ -1,28 +1,18 @@
 <template>
   <div class="container">
-    <nut-toast
-      msg="阈值更新成功"
-      v-model:visible="visible"
-      type="text"
-      cover="false"
-    />
+    <nut-toast msg="阈值更新成功" v-model:visible="visible" type="text" cover="false" />
     <div class="header">
       <span class="title">智能环境监测</span>
     </div>
     <div class="sensor-grid">
       <!-- 温度传感器 -->
-      <div
-        class="sensor-card"
-        :class="{ warning: isOutOfRange('temperature') }"
-      >
+      <div class="sensor-card" :class="{ warning: isOutOfRange('temperature') }">
         <div class="sensor-name">
           <span>温度</span>
         </div>
         <div class="sensor-value">
           {{ data.temperature }}<span class="unit">°C</span>
-          <span v-if="isOutOfRange('temperature')" class="warning-pulse"
-            >⚠️</span
-          >
+          <span v-if="isOutOfRange('temperature')" class="warning-pulse">⚠️</span>
         </div>
       </div>
 
@@ -51,7 +41,7 @@
       <!-- 二氧化碳传感器 -->
       <div class="sensor-card" :class="{ warning: isOutOfRange('co2') }">
         <div class="sensor-name">
-          <span>二氧化碳</span>
+          <span>空气质量</span>
         </div>
         <div class="sensor-value">
           {{ data.co2 }}<span class="unit">ppm</span>
@@ -61,9 +51,7 @@
     </div>
     <div class="status-card">
       <span class="status-name">WiFi连接</span>
-      <span
-        :class="['status-value', data.status === 1 ? 'active' : 'inactive']"
-      >
+      <span :class="['status-value', data.status === 1 ? 'active' : 'inactive']">
         {{ data.status === 1 ? "已连接" : "未连接" }}
       </span>
     </div>
@@ -74,16 +62,10 @@
       </span>
     </div>
     <div class="tab-header">
-      <div
-        :class="['tab-button', activeTab === 'control' ? 'active' : '']"
-        @click="activeTab = 'control'"
-      >
+      <div :class="['tab-button', activeTab === 'control' ? 'active' : '']" @click="activeTab = 'control'">
         功能控制
       </div>
-      <div
-        :class="['tab-button', activeTab === 'threshold' ? 'active' : '']"
-        @click="activeTab = 'threshold'"
-      >
+      <div :class="['tab-button', activeTab === 'threshold' ? 'active' : '']" @click="activeTab = 'threshold'">
         阈值设置
       </div>
     </div>
@@ -92,17 +74,9 @@
         <div v-for="(item, key) in thresholds" :key="key" class="form-group">
           <label>{{ keyLabels[key] }}</label>
           <div class="inputs">
-            <input
-              type="number"
-              v-model.number="thresholdDraft[key].min"
-              placeholder="最小值"
-            />
+            <input type="number" v-model.number="thresholdDraft[key].min" placeholder="最小值" />
             <span>~</span>
-            <input
-              type="number"
-              v-model.number="thresholdDraft[key].max"
-              placeholder="最大值"
-            />
+            <input type="number" v-model.number="thresholdDraft[key].max" placeholder="最大值" />
           </div>
         </div>
         <button class="okBtn" @click="changeRange">确定</button>
@@ -110,11 +84,7 @@
       <div v-else class="control-section">
         <div class="control-card">
           <p class="control-title">一键报警</p>
-          <button
-            class="alarm-button"
-            :class="{ active: alarmActive }"
-            @click="handleAlarm"
-          >
+          <button class="alarm-button" :class="{ active: alarmActive }" @click="handleAlarm">
             {{ alarmActive ? "已报警" : "启动报警" }}
           </button>
         </div>
@@ -174,9 +144,35 @@ const keyLabels = {
 const handleAlarm = () => {
   if (!alarmActive.value) {
     alarmActive.value = true;
+    return;
+    axios({
+      method: "POST",
+      url: `https://iot-api.heclouds.com/thingmodel/set-device-property`,
+      data: {
+        product_id: CONFIG.PRODUCT_ID,
+        device_name: CONFIG.DEVICE_NAME,
+        params: { BUZZER: true },
+      },
+      headers: {
+        authorization: CONFIG.API_KEY,
+      },
+    })
+      .then((response) => {
+        console.log("加热命令发送成功:", response.data);
+
+        if (response.data.code === 0) {
+
+        } else {
+          console.error("加热命令发送失败:", response.data.msg);
+        }
+      })
+      .catch((error) => {
+        state.show = false;
+        console.error("加热命令发送异常:", error);
+      });
     setTimeout(() => {
       alarmActive.value = false;
-    }, 3000);
+    }, 2000);
   }
 };
 
@@ -403,9 +399,11 @@ onUnmounted(() => {
   0% {
     opacity: 0.6;
   }
+
   50% {
     opacity: 1;
   }
+
   100% {
     opacity: 0.6;
   }
