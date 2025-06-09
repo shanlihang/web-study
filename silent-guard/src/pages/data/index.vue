@@ -4,17 +4,147 @@
       <span class="left-btn" @click="backHome">返回</span>
       <span class="title">历史统计</span>
     </div>
+    <Segmented
+      v-model="selectedOption"
+      :options="options"
+      :block="true"
+      @change="handleChange"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import Taro from "@tarojs/taro";
+import Taro, { getCurrentInstance } from '@tarojs/taro'
+import Segmented from '../../components/Segmented/index.vue'
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
+import dayjs from 'dayjs'
 
+// 设备配置接口
+interface DeviceConfig {
+  device_name: string
+  key: string
+  product_id: string
+}
+
+// 默认设备配置
+const defaultConfig: DeviceConfig = {
+  device_name: '',
+  key: '',
+  product_id: ''
+}
+const options = [
+  { value: 'Temp', label: '温度' },
+  { value: 'Hum', label: '湿度' },
+  { value: 'Gas', label: '空气质量' },
+  { value: 'CO', label: 'CO' }
+]
+// 设备配置
+const deviceConfig = ref<DeviceConfig>(defaultConfig)
+const canvas = ref(null)
 const backHome = () => {
   Taro.navigateBack({
-    delta: 1, // 返回几层
-  });
-};
+    delta: 1 // 返回几层
+  })
+}
+
+// 默认选中的值，将从 URL 参数获取
+const selectedOption = ref('Temp')
+
+// 存储路由参数
+const routeParams = ref<Record<string, string | undefined>>({})
+
+// 在组件挂载时获取 URL 参数
+onMounted(() => {
+  const instance = getCurrentInstance()
+  const router = instance?.router
+
+  if (router?.params) {
+    // 保存所有路由参数
+    routeParams.value = router.params
+    console.log('路由参数：', routeParams.value)
+
+    // 更新设备配置
+    if (
+      router.params.device_name &&
+      router.params.key &&
+      router.params.product_id
+    ) {
+      deviceConfig.value = {
+        device_name: router.params.device_name as string,
+        key: router.params.key as string,
+        product_id: router.params.product_id as string
+      }
+    }
+
+    // 如果有 type 参数，更新选中的选项
+    if (router.params.type) {
+      selectedOption.value = router.params.type as string
+      // 立即获取对应类型的数据
+      getDeviceHistory(router.params.type as string)
+    }
+  }
+})
+
+const handleChange = (value: string | number) => {
+  console.log('选中的值：', value)
+  // 当选项改变时，更新查询参数
+  getDeviceHistory(value as string)
+}
+const getDeviceHistory = async (identifier: string = selectedOption.value) => {
+  try {
+    const response = await axios({
+      method: 'GET',
+      url: `https://iot-api.heclouds.com/thingmodel/query-device-property-history`,
+      params: {
+        identifier,
+        product_id: deviceConfig.value.product_id,
+        device_name: deviceConfig.value.device_name,
+        start_time: dayjs().subtract(7, 'day').valueOf(),
+        end_time: dayjs().valueOf(),
+        limit: 100
+      },
+      headers: {
+        Authorization: decodeURIComponent(deviceConfig.value.key)
+      }
+    })
+    console.log(1111, response)
+    if (response.data.code === 0) {
+      const echartComponentInstance = canvas.value
+      const option = {
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            // 坐标轴指示器，坐标轴触发有效
+            type: 'shadow' // 默认为直线，可选为：'line' | 'shadow'
+          }
+        },
+        xAxis: {
+          type: 'category',
+          data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        },
+        yAxis: {
+          type: 'value'
+        },
+        series: [
+          {
+            data: [120, 200, 150, 80, 70, 110, 130],
+            type: 'bar'
+          }
+        ]
+      }
+
+      Taro.nextTick(() => {
+        echartComponentInstance.refresh(option)
+      })
+      // 处理历史数据
+    } else {
+      throw new Error(response.data.msg || '获取设备历史数据失败')
+    }
+  } catch (error) {
+    console.error('获取设备历史数据失败:', error)
+  }
+}
 </script>
 
 <style scoped>
@@ -23,7 +153,7 @@ const backHome = () => {
   overflow: hidden;
   min-height: 100vh;
   background: linear-gradient(160deg, #0a0e17 0%, #1a2130 100%);
-  font-family: "Roboto", "PingFang SC", sans-serif;
+  font-family: 'Roboto', 'PingFang SC', sans-serif;
   color: #e0e0e0;
   font-size: 16px;
 }
@@ -51,7 +181,7 @@ const backHome = () => {
 }
 
 .header .title::after {
-  content: "";
+  content: '';
   position: absolute;
   bottom: -10px;
   left: 50%;

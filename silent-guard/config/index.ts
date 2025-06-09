@@ -27,7 +27,7 @@ export default defineConfig<'vite'>(async (merge, { command, mode }) => {
     },
     sourceRoot: 'src',
     outputRoot: 'dist',
-    plugins: ['@tarojs/plugin-html'],
+    plugins: ['@tarojs/plugin-html',],
     defineConstants: {
     },
     copy: {
@@ -42,8 +42,11 @@ export default defineConfig<'vite'>(async (merge, { command, mode }) => {
       vitePlugins: [
         Components({
           resolvers: [NutUIResolver({taro: true})]
-        })
-      ]
+        }),
+      ],
+      prebundle: {
+        enable: true,
+      },
     },
     mini: {
       postcss: {

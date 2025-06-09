@@ -1,0 +1,6 @@
+{
+	"dependencies": {
+		"dayjs": "^1.11.13",
+		"echarts4taro3": "^1.8.0"
+	}
+}
