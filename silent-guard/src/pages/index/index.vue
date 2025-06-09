@@ -311,7 +311,7 @@ const sendEmail = async (key) => {
   try {
     const response = await axios({
       method: "POST",
-      url: "http://localhost:3000/send-email",
+      url: "http://8.155.18.86:3000/send-email",
       data: {
         text: `${key}数据异常，请及时处理`,
       },
