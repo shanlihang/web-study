@@ -1,34 +1,16 @@
 <template>
   <view class="login-container">
+    <nut-toast
+      msg="人脸识别通过，即将跳转"
+      v-model:visible="visible"
+      type="text"
+    />
     <view class="login-header">
       <text class="title">Silent Guard</text>
-      <text class="subtitle">智能监控系统</text>
+      <text class="subtitle">独居老人环境安全监测系统</text>
     </view>
 
-    <view class="login-form" v-if="loginMode === 'password'">
-      <view class="form-item">
-        <input
-          class="input"
-          type="text"
-          v-model="username"
-          placeholder="请输入用户名"
-          placeholder-class="placeholder"
-        />
-      </view>
-      <view class="form-item">
-        <input
-          class="input"
-          type="password"
-          password
-          v-model="password"
-          placeholder="请输入密码"
-          placeholder-class="placeholder"
-        />
-      </view>
-      <button class="login-btn" @tap="handleLogin">登 录</button>
-    </view>
-
-    <view class="login-face" v-else>
+    <view class="login-face">
       <view class="face-id-container">
         <view
           class="face-outline"
@@ -54,112 +36,43 @@
         <view class="scan-result" v-if="faceDetected">识别成功</view>
       </view>
       <button class="face-btn" @tap="handleFaceLogin" :disabled="isScanning">
-        {{ isScanning ? '识别中...' : '开始识别' }}
+        {{ isScanning ? "识别中..." : "开始识别" }}
       </button>
-    </view>
-
-    <view class="login-switch">
-      <text @tap="switchLoginMode">
-        切换到{{ loginMode === 'password' ? '人脸识别' : '密码登录' }}
-      </text>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import Taro from '@tarojs/taro'
-import { onUnmounted, ref } from 'vue'
+import Taro from "@tarojs/taro";
+import { ref } from "vue";
 
-// 登录模式：password-密码登录，face-人脸识别
-const loginMode = ref<'password' | 'face'>('password')
-const username = ref('')
-const password = ref('')
-const faceDetected = ref(false)
-const isScanning = ref(false)
-
-// 切换登录模式
-const switchLoginMode = () => {
-  loginMode.value = loginMode.value === 'password' ? 'face' : 'password'
-}
-
-// 密码登录
-const handleLogin = async () => {
-  if (!username.value || !password.value) {
-    Taro.showToast({
-      title: '请输入用户名和密码',
-      icon: 'none'
-    })
-    return
-  }
-  if (username.value !== 'admin' || password.value !== '123456') {
-    Taro.showToast({
-      title: '用户名或密码错误',
-      icon: 'none'
-    })
-  }
-  try {
-    // TODO: 调用登录接口
-    await mockLogin()
-    Taro.showToast({
-      title: '登录成功',
-      icon: 'success'
-    })
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    Taro.navigateTo({ url: '/pages/index/index' })
-  } catch (error) {
-    Taro.showToast({
-      title: '登录失败',
-      icon: 'none'
-    })
-  }
-}
+const faceDetected = ref(false);
+const isScanning = ref(false);
+const visible = ref(false);
 
 // 人脸识别登录
 const handleFaceLogin = async () => {
   try {
-    isScanning.value = true
-    faceDetected.value = false
+    isScanning.value = true;
+    faceDetected.value = false;
 
     // 模拟人脸检测过程
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    faceDetected.value = true
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    faceDetected.value = true;
 
     // 等待动画完成
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    Taro.showToast({
-      title: '识别成功',
-      icon: 'success'
-    })
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    visible.value = true;
 
     // 延迟跳转
     setTimeout(() => {
-      Taro.navigateTo({ url: '/pages/index/index' })
-    }, 500)
+      Taro.navigateTo({ url: "/pages/index/index" });
+    }, 1000);
   } catch (error) {
-    isScanning.value = false
-    faceDetected.value = false
-    Taro.showToast({
-      title: '识别失败',
-      icon: 'none'
-    })
+    isScanning.value = false;
+    faceDetected.value = false;
   }
-}
-
-// 模拟登录接口
-const mockLogin = () => {
-  return new Promise((resolve) => {
-    setTimeout(resolve, 1000)
-  })
-}
-
-// 模拟人脸识别接口
-const mockFaceRecognition = (imagePath: string) => {
-  console.log('人脸图片路径：', imagePath)
-  return new Promise((resolve) => {
-    setTimeout(resolve, 2000)
-  })
-}
+};
 </script>
 
 <style lang="scss">
@@ -276,7 +189,7 @@ const mockFaceRecognition = (imagePath: string) => {
 
     &::before,
     &::after {
-      content: '';
+      content: "";
       position: absolute;
       top: -3px;
       left: -3px;
@@ -379,7 +292,7 @@ const mockFaceRecognition = (imagePath: string) => {
   box-shadow: 0 0 15px rgba(0, 102, 255, 0.6), 0 0 30px rgba(0, 102, 255, 0.3);
 
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 50%;
     left: 50%;
@@ -418,7 +331,7 @@ const mockFaceRecognition = (imagePath: string) => {
 
     &::before,
     &::after {
-      content: '';
+      content: "";
       position: absolute;
       width: 40px;
       height: 3px;
