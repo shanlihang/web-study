@@ -1,5 +1,11 @@
 <template>
   <div class="container">
+    <nut-toast
+      msg="AI分析中"
+      v-model:visible="visible"
+      type="loading"
+      :duration="0"
+    />
     <div class="header">
       <span class="left-btn" @click="backHome">返回</span>
       <span class="title">历史统计</span>
@@ -12,8 +18,29 @@
     />
     <LineChart class="chart" :data="dataSource" :chartName="chartName" />
     <nut-button class="btn" type="info" size="large" @click="handleClickBtn"
-      >主要按钮</nut-button
+      >AI分析</nut-button
     >
+    <nut-popup
+      v-model:visible="show"
+      position="bottom"
+      closeable
+      round
+      :style="{ height: '50%' }"
+      style="background-color: #010101"
+    >
+      <Segmented
+        v-model="selectedAiOption"
+        :options="aiOptions"
+        :block="true"
+        @change="changeAiOption"
+      />
+      <div v-if="selectedAiOption === 'result'" v-html="result?.content"></div>
+      <div
+        v-else-if="selectedAiOption === 'progress'"
+        v-html="result?.reasoning_content"
+      ></div>
+      <div v-else>网络异常，请稍后重试</div>
+    </nut-popup>
   </div>
 </template>
 
@@ -32,6 +59,8 @@ interface DeviceConfig {
   product_id: string;
 }
 
+const result = ref();
+
 // 默认设备配置
 const defaultConfig: DeviceConfig = {
   device_name: "",
@@ -45,7 +74,14 @@ const options = [
   { value: "CO", label: "一氧化碳" },
 ];
 
+const aiOptions = [
+  { value: "result", label: "分析结果" },
+  { value: "progress", label: "分析过程" },
+];
+
 const chartName = ref("烟雾浓度变化图");
+const visible = ref(false);
+const show = ref(false);
 // 设备配置
 const deviceConfig = ref<DeviceConfig>(defaultConfig);
 const backHome = () => {
@@ -58,6 +94,7 @@ const dataSource = ref();
 
 // 默认选中的值，将从 URL 参数获取
 const selectedOption = ref("Temp");
+const selectedAiOption = ref("result");
 
 // 存储路由参数
 const routeParams = ref<Record<string, string | undefined>>({});
@@ -95,7 +132,6 @@ onMounted(() => {
 });
 
 const handleChange = (value: string | number) => {
-  console.log("选中的值：", value);
   if (value == "Gas") {
     chartName.value = "烟雾浓度变化图";
   } else if (value == "Hum") {
@@ -105,9 +141,12 @@ const handleChange = (value: string | number) => {
   } else if (value == "CO") {
     chartName.value = "一氧化碳变化图";
   }
-
   // 当选项改变时，更新查询参数
   getDeviceHistory(value as string);
+};
+
+const changeAiOption = (value: string) => {
+  console.log("选中的值：", value);
 };
 
 const getDeviceHistory = async (identifier: string = selectedOption.value) => {
@@ -138,14 +177,8 @@ const getDeviceHistory = async (identifier: string = selectedOption.value) => {
   }
 };
 
-const handleClickBtn = () => {
-  Taro.showToast({
-    title: "点击了按钮",
-    icon: "none",
-  });
-};
-
-const chatAI = async () => {
+const handleClickBtn = async () => {
+  visible.value = true;
   try {
     const response = await axios({
       method: "POST",
@@ -155,8 +188,10 @@ const chatAI = async () => {
         value: dataSource.value,
       },
     });
+    visible.value = false;
+    show.value = true;
     if (response.data.code === 200) {
-      console.log(response.data);
+      result.value = response.data?.data;
     }
   } catch (error) {
     console.error("获取设备历史数据失败:", error);
