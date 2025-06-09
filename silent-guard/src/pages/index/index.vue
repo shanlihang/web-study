@@ -65,13 +65,13 @@
       <span
         :class="['status-value', data.status === 1 ? 'active' : 'inactive']"
       >
-        {{ data.status === 1 ? '已连接' : '未连接' }}
+        {{ data.status === 1 ? "已连接" : "未连接" }}
       </span>
     </div>
     <div class="status-card">
       <span class="status-name">雷达感应</span>
       <span :class="['status-value', havePeople ? 'active' : 'inactive']">
-        {{ havePeople ? '检测到人员' : '无人活动' }}
+        {{ havePeople ? "检测到人员" : "无人活动" }}
       </span>
     </div>
     <div class="tab-header">
@@ -116,13 +116,13 @@
             :class="{ active: alarmActive }"
             @click="handleAlarm"
           >
-            {{ alarmActive ? '已报警' : '启动报警' }}
+            {{ alarmActive ? "已报警" : "启动报警" }}
           </button>
         </div>
         <div class="status-card">
           <span>当前状态：</span>
           <span :class="alarmActive ? 'active' : 'inactive'">
-            {{ alarmActive ? '告警中' : '正常' }}
+            {{ alarmActive ? "告警中" : "正常" }}
           </span>
         </div>
       </div>
@@ -131,47 +131,62 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, reactive, toRaw } from 'vue'
-import axios from 'axios'
-import Taro from '@tarojs/taro'
-import dayjs from 'dayjs'
+import {
+  ref,
+  onMounted,
+  onUnmounted,
+  computed,
+  reactive,
+  toRaw,
+  watch,
+} from "vue";
+import axios from "axios";
+import Taro from "@tarojs/taro";
+import dayjs from "dayjs";
 // 配置信息
 const CONFIG = {
-  PRODUCT_ID: '4u2d7xdNrE', // 产品ID
-  DEVICE_NAME: 'environment_monitor_device', // 设备名称
+  PRODUCT_ID: "4u2d7xdNrE", // 产品ID
+  DEVICE_NAME: "environment_monitor_device", // 设备名称
   API_KEY:
-    'version=2018-10-31&res=products%2F4u2d7xdNrE%2Fdevices%2Fenvironment_monitor_device&et=1906444415&method=md5&sign=hfmzwARWIBViMTB9wBAsvQ%3D%3D'
-}
+    "version=2018-10-31&res=products%2F4u2d7xdNrE%2Fdevices%2Fenvironment_monitor_device&et=1906444415&method=md5&sign=hfmzwARWIBViMTB9wBAsvQ%3D%3D",
+};
 
-const intervalId = ref(null)
-const timeRange = ref(5000)
+const dictionary = {
+  temperature: "温度",
+  humidity: "湿度",
+  co: "一氧化碳",
+  co2: "空气质量",
+};
 
-const visible = ref(false)
+const intervalId = ref(null);
+const timeRange = ref(5000);
 
-const activeTab = ref('control')
-const alarmActive = ref(false)
+const visible = ref(false);
+
+const activeTab = ref("control");
+const alarmActive = ref(false);
 
 const thresholds = reactive({
   temperature: { min: 26, max: 32 },
   humidity: { min: 30, max: 60 },
   co: { min: 0, max: 3 },
-  co2: { min: 400, max: 800 }
-})
+  co2: { min: 400, max: 800 },
+});
 
-const thresholdDraft = reactive(JSON.parse(JSON.stringify(toRaw(thresholds))))
+const thresholdDraft = reactive(JSON.parse(JSON.stringify(toRaw(thresholds))));
 
 const isOutOfRange = (key) => {
-  const val = Number(data[key])
-  const { min, max } = thresholds[key]
-  return val < min || val > max
-}
+  const val = Number(data[key]);
+  const { min, max } = thresholds[key];
+  return val < min || val > max;
+};
 
 const keyLabels = {
-  temperature: '温度 (°C)',
-  humidity: '湿度 (%RH)',
-  co: '一氧化碳 (ppm)',
-  co2: '二氧化碳 (ppm)'
-}
+  temperature: "温度 (°C)",
+  humidity: "湿度 (%RH)",
+  co: "一氧化碳 (ppm)",
+  co2: "二氧化碳 (ppm)",
+};
 
 const showHistory = () => {
   Taro.navigateTo({
@@ -179,138 +194,212 @@ const showHistory = () => {
       CONFIG.PRODUCT_ID
     }&device_name=${CONFIG.DEVICE_NAME}&key=${encodeURIComponent(
       CONFIG.API_KEY
-    )}`
-  })
-}
+    )}`,
+  });
+};
 
 const handleAlarm = () => {
   if (!alarmActive.value) {
-    alarmActive.value = true
+    alarmActive.value = true;
     axios({
-      method: 'POST',
+      method: "POST",
       url: `https://iot-api.heclouds.com/thingmodel/set-device-property`,
       data: {
         product_id: CONFIG.PRODUCT_ID,
         device_name: CONFIG.DEVICE_NAME,
-        params: { BUZZER: true }
+        params: { BUZZER: true },
       },
       headers: {
-        authorization: CONFIG.API_KEY
-      }
+        authorization: CONFIG.API_KEY,
+      },
     })
       .then((response) => {
-        console.log('加热命令发送成功:', response.data)
+        console.log("加热命令发送成功:", response.data);
 
         if (response.data.code === 0) {
         } else {
-          console.error('加热命令发送失败:', response.data.msg)
+          console.error("加热命令发送失败:", response.data.msg);
         }
       })
       .catch((error) => {
-        state.show = false
-        console.error('加热命令发送异常:', error)
-      })
+        state.show = false;
+        console.error("加热命令发送异常:", error);
+      });
     setTimeout(() => {
-      alarmActive.value = false
-    }, 2000)
+      alarmActive.value = false;
+    }, 2000);
   }
-}
+};
 
 const changeRange = () => {
   Object.keys(thresholds).forEach((key) => {
-    thresholds[key].min = thresholdDraft[key].min
-    thresholds[key].max = thresholdDraft[key].max
-  })
-  visible.value = true
-  activeTab.value = 'control'
-}
+    thresholds[key].min = thresholdDraft[key].min;
+    thresholds[key].max = thresholdDraft[key].max;
+  });
+  visible.value = true;
+  activeTab.value = "control";
+};
 
 const data = reactive({
   status: 0,
-  temperature: '0',
-  humidity: '0',
-  co: '0',
-  co2: '0',
-  people: 'false'
-})
-const havePeople = computed(() => data.people === 'true')
+  temperature: "0",
+  humidity: "0",
+  co: "0",
+  co2: "0",
+  people: "false",
+});
+
+const havePeople = computed(() => data.people === "true");
+
+// 要监控的字段列表
+const keysToWatch = ["temperature", "humidity", "co", "co2"];
+
+// 控制输出节流（防止重复触发多个watch间隔未完成）
+let isAlerting = false;
+
+// 保存每个字段的定时器
+const overtimeTimers = {}; // e.g., { temperature: timeoutID }
+const overtimeDuration = 30 * 1000; // 半小时 = 30 * 60 * 1000
+
+// 顺序延时输出函数
+const outputKeysWithDelay = async (keys) => {
+  if (isAlerting) return;
+  isAlerting = true;
+
+  for (let key of keys) {
+    // 放置触发蜂鸣器方法
+    handleAlarm();
+    await new Promise((resolve) => setTimeout(resolve, 5000)); // 5秒间隔
+  }
+
+  isAlerting = false;
+};
+
+// 监听这几个字段的变化
+watch(
+  () => keysToWatch.map((key) => data[key]),
+  () => {
+    const outOfRangeKeys = keysToWatch.filter((key) => isOutOfRange(key));
+
+    // 延时输出字段名
+    if (outOfRangeKeys.length > 0) {
+      outputKeysWithDelay(outOfRangeKeys);
+    }
+
+    // 管理每个字段的越界计时器
+    keysToWatch.forEach((key) => {
+      if (isOutOfRange(key)) {
+        if (!overtimeTimers[key]) {
+          // 开始倒计时
+          overtimeTimers[key] = setTimeout(() => {
+            sendEmail(dictionary[key]);
+            overtimeTimers[key] = null;
+          }, overtimeDuration);
+        }
+      } else {
+        // 值恢复正常，清除计时器
+        if (overtimeTimers[key]) {
+          clearTimeout(overtimeTimers[key]);
+          overtimeTimers[key] = null;
+        }
+      }
+    });
+  }
+);
+
+const sendEmail = async (key) => {
+  try {
+    const response = await axios({
+      method: "POST",
+      url: "http://localhost:3000/send-email",
+      data: {
+        text: `${key}数据异常，请及时处理`,
+      },
+    });
+    if (response.data.code === 200) {
+      console.log("邮件发送成功");
+    }
+  } catch (error) {
+    console.error("邮件发送失败", error);
+  }
+};
 
 // 获取设备在线状态
 const getDeviceStatus = async () => {
   try {
     const response = await axios({
-      method: 'GET',
-      url: ' https://iot-api.heclouds.com/device/detail',
+      method: "GET",
+      url: " https://iot-api.heclouds.com/device/detail",
       params: {
         product_id: CONFIG.PRODUCT_ID,
-        device_name: CONFIG.DEVICE_NAME
+        device_name: CONFIG.DEVICE_NAME,
       },
       headers: {
-        Authorization: CONFIG.API_KEY
-      }
-    })
+        Authorization: CONFIG.API_KEY,
+      },
+    });
     if (response.data.code === 0) {
-      data.status = response.data.data.status
+      data.status = response.data.data.status;
     } else {
-      throw new Error(response.data.msg || '获取设备状态失败')
+      throw new Error(response.data.msg || "获取设备状态失败");
     }
   } catch (error) {
-    console.error('获取设备状态失败:', error)
-    data.status = 0
+    console.error("获取设备状态失败:", error);
+    data.status = 0;
   }
-}
+};
 
 // 查询设备属性
 const queryDeviceProperty = async () => {
   try {
     const response = await axios({
-      method: 'GET',
+      method: "GET",
       url: `https://iot-api.heclouds.com/thingmodel/query-device-property`,
       params: {
         product_id: CONFIG.PRODUCT_ID,
-        device_name: CONFIG.DEVICE_NAME
+        device_name: CONFIG.DEVICE_NAME,
       },
       headers: {
-        Authorization: CONFIG.API_KEY
-      }
-    })
+        Authorization: CONFIG.API_KEY,
+      },
+    });
     if (response.data.code === 0) {
       data.temperature =
-        response.data.data.find((item) => item.identifier === 'Temp')?.value ||
-        '0'
+        response.data.data.find((item) => item.identifier === "Temp")?.value ||
+        "0";
       data.people =
-        response.data.data.find((item) => item.identifier === 'People')
-          ?.value || false
+        response.data.data.find((item) => item.identifier === "People")
+          ?.value || false;
       data.humidity =
-        response.data.data.find((item) => item.identifier === 'Hum')?.value ||
-        '0'
+        response.data.data.find((item) => item.identifier === "Hum")?.value ||
+        "0";
       data.co =
-        response.data.data.find((item) => item.identifier === 'CO')?.value ||
-        '0'
+        response.data.data.find((item) => item.identifier === "CO")?.value ||
+        "0";
       data.co2 =
-        response.data.data.find((item) => item.identifier === 'Gas')?.value ||
-        '0'
+        response.data.data.find((item) => item.identifier === "Gas")?.value ||
+        "0";
     } else {
-      throw new Error(response.data.msg || '查询设备属性失败')
+      throw new Error(response.data.msg || "查询设备属性失败");
     }
   } catch (error) {
-    console.error('查询设备属性失败:', error)
+    console.error("查询设备属性失败:", error);
   }
-}
+};
 
 onMounted(() => {
-  getDeviceStatus()
-  queryDeviceProperty()
+  getDeviceStatus();
+  queryDeviceProperty();
   // intervalId.value = setInterval(() => {
   //   getDeviceStatus()
   //   queryDeviceProperty()
   // }, timeRange.value)
-})
+});
 
 onUnmounted(() => {
   // 清理定时器，防止内存泄漏
-  clearInterval(intervalId.value)
-})
+  clearInterval(intervalId.value);
+});
 </script>
 
 <style scoped>
@@ -319,7 +408,7 @@ onUnmounted(() => {
   overflow: hidden;
   min-height: 100vh;
   background: linear-gradient(160deg, #0a0e17 0%, #1a2130 100%);
-  font-family: 'Roboto', 'PingFang SC', sans-serif;
+  font-family: "Roboto", "PingFang SC", sans-serif;
   color: #e0e0e0;
   font-size: 16px;
 }
@@ -347,7 +436,7 @@ onUnmounted(() => {
 }
 
 .header .title::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -10px;
   left: 50%;

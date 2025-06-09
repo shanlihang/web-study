@@ -30,20 +30,16 @@ const transporter = nodemailer.createTransport({
 
 // 邮件发送接口
 app.post("/send-email", async (req, res) => {
-  const { to, subject, text } = req.body;
-
-  if (!to || !subject || !text) {
-    return res.status(400).json({ error: "缺少必要参数" });
-  }
+  const { text } = req.body;
 
   try {
     await transporter.sendMail({
       from: '"独居老人环境监测系统" <67490009@qq.com>',
-      to, //接收者
-      subject, //标题
+      to: "slh_wldz@163.com", //接收者
+      subject: "异常数据警报", //标题
       text, //内容
     });
-    res.json({ message: "邮件发送成功" });
+    res.json({ code: 200, message: "邮件发送成功" });
   } catch (err) {
     console.error("发送失败:", err);
     res.status(500).json({ error: "邮件发送失败", details: err.message });
@@ -51,27 +47,20 @@ app.post("/send-email", async (req, res) => {
 });
 
 app.post("/ai", async (req, res) => {
+  const { type, value } = req.body;
   const completion = await openai.chat.completions.create({
     messages: [
       {
         role: "system",
         content:
-          "你是人工智能助手,要分析用户发来的json数据，每个数据代表一次室内烟雾浓度的值，你分析一下这个值，并判断是否安全，给出评价和相关建议",
+          "你是人工智能助手,要分析用户发来的json数据，每个数据代表一次室内烟雾/一氧化碳/温度/湿度的浓度的值，你分析一下这些值，并结合数值总结了一下，并给出一个建议，建议是一个字符串，不要超过100字",
       },
       {
         role: "user",
-        content: JSON.stringify([
-          { key: "2025-06-09T10:00:00", value: 45 },
-          { key: "2025-06-09T10:01:00", value: 47 },
-          { key: "2025-06-09T10:02:00", value: 52 },
-          { key: "2025-06-09T10:03:00", value: 55 },
-          { key: "2025-06-09T10:04:00", value: 61 },
-          { key: "2025-06-09T10:05:00", value: 58 },
-          { key: "2025-06-09T10:06:00", value: 65 },
-          { key: "2025-06-09T10:07:00", value: 70 },
-          { key: "2025-06-09T10:08:00", value: 73 },
-          { key: "2025-06-09T10:09:00", value: 68 },
-        ]),
+        content: JSON.stringify({
+          type: `本次上传的数据为独居老人环境监测系统检测到的${type}测量值`,
+          value,
+        }),
       },
     ],
     model: "doubao-1-5-thinking-pro-250415",

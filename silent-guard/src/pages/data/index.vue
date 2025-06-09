@@ -10,89 +10,67 @@
       :block="true"
       @change="handleChange"
     />
+    <LineChart class="chart" :data="dataSource" :chartName="chartName" />
+    <nut-button class="btn" type="info" size="large" @click="handleClickBtn"
+      >主要按钮</nut-button
+    >
   </div>
 </template>
 
 <script setup lang="ts">
-import Taro, { getCurrentInstance, useReady } from '@tarojs/taro'
-import Segmented from '../../components/Segmented/index.vue'
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
-import dayjs from 'dayjs'
+import Taro, { getCurrentInstance } from "@tarojs/taro";
+import Segmented from "../../components/Segmented/index.vue";
+import { ref, onMounted } from "vue";
+import axios from "axios";
+import dayjs from "dayjs";
+import LineChart from "../../components/Charts/index.vue";
 
 // 设备配置接口
 interface DeviceConfig {
-  device_name: string
-  key: string
-  product_id: string
+  device_name: string;
+  key: string;
+  product_id: string;
 }
 
 // 默认设备配置
 const defaultConfig: DeviceConfig = {
-  device_name: '',
-  key: '',
-  product_id: ''
-}
+  device_name: "",
+  key: "",
+  product_id: "",
+};
 const options = [
-  { value: 'Temp', label: '温度' },
-  { value: 'Hum', label: '湿度' },
-  { value: 'Gas', label: '空气质量' },
-  { value: 'CO', label: 'CO' }
-]
+  { value: "Temp", label: "温度" },
+  { value: "Hum", label: "湿度" },
+  { value: "Gas", label: "空气质量" },
+  { value: "CO", label: "一氧化碳" },
+];
+
+const chartName = ref("烟雾浓度变化图");
 // 设备配置
-const deviceConfig = ref<DeviceConfig>(defaultConfig)
+const deviceConfig = ref<DeviceConfig>(defaultConfig);
 const backHome = () => {
   Taro.navigateBack({
-    delta: 1 // 返回几层
-  })
-}
+    delta: 1, // 返回几层
+  });
+};
+
+const dataSource = ref();
+
 // 默认选中的值，将从 URL 参数获取
-const selectedOption = ref('Temp')
+const selectedOption = ref("Temp");
 
 // 存储路由参数
-const routeParams = ref<Record<string, string | undefined>>({})
+const routeParams = ref<Record<string, string | undefined>>({});
 
-const handleChange = (value: string | number) => {
-  console.log('选中的值：', value)
-  // 当选项改变时，更新查询参数
-  getDeviceHistory(value as string)
-}
-const getDeviceHistory = async (identifier: string = selectedOption.value) => {
-  try {
-    const response = await axios({
-      method: 'GET',
-      url: `https://iot-api.heclouds.com/thingmodel/query-device-property-history`,
-      params: {
-        identifier,
-        product_id: deviceConfig.value.product_id,
-        device_name: deviceConfig.value.device_name,
-        start_time: dayjs().subtract(7, 'day').valueOf(),
-        end_time: dayjs().valueOf(),
-        limit: 100
-      },
-      headers: {
-        Authorization: decodeURIComponent(deviceConfig.value.key)
-      }
-    })
-    console.log(1111, response)
-    if (response.data.code === 0) {
-      // 处理历史数据
-    } else {
-      throw new Error(response.data.msg || '获取设备历史数据失败')
-    }
-  } catch (error) {
-    console.error('获取设备历史数据失败:', error)
-  }
-}
 // 在组件挂载时获取 URL 参数
 onMounted(() => {
-  const instance = getCurrentInstance()
-  const router = instance?.router
+  const instance = getCurrentInstance();
+  const router = instance?.router;
 
   if (router?.params) {
     // 保存所有路由参数
-    routeParams.value = router.params
-    console.log('路由参数：', routeParams.value)
+    routeParams.value = router.params;
+    console.log("路由参数：", routeParams.value);
 
     // 更新设备配置
     if (
@@ -103,18 +81,87 @@ onMounted(() => {
       deviceConfig.value = {
         device_name: router.params.device_name as string,
         key: router.params.key as string,
-        product_id: router.params.product_id as string
-      }
+        product_id: router.params.product_id as string,
+      };
     }
 
     // 如果有 type 参数，更新选中的选项
     if (router.params.type) {
-      selectedOption.value = router.params.type as string
+      selectedOption.value = router.params.type as string;
       // 立即获取对应类型的数据
-      getDeviceHistory(router.params.type as string)
+      getDeviceHistory(router.params.type as string);
     }
   }
-})
+});
+
+const handleChange = (value: string | number) => {
+  console.log("选中的值：", value);
+  if (value == "Gas") {
+    chartName.value = "烟雾浓度变化图";
+  } else if (value == "Hum") {
+    chartName.value = "湿度变化图";
+  } else if (value == "Temp") {
+    chartName.value = "温度变化图";
+  } else if (value == "CO") {
+    chartName.value = "一氧化碳变化图";
+  }
+
+  // 当选项改变时，更新查询参数
+  getDeviceHistory(value as string);
+};
+
+const getDeviceHistory = async (identifier: string = selectedOption.value) => {
+  try {
+    const response = await axios({
+      method: "GET",
+      url: `https://iot-api.heclouds.com/thingmodel/query-device-property-history`,
+      params: {
+        identifier,
+        product_id: deviceConfig.value.product_id,
+        device_name: deviceConfig.value.device_name,
+        start_time: dayjs().subtract(6, "day").valueOf(),
+        end_time: dayjs().valueOf(),
+        limit: 100,
+      },
+      headers: {
+        Authorization: decodeURIComponent(deviceConfig.value.key),
+      },
+    });
+    if (response.data.code === 0) {
+      dataSource.value = response.data.data?.list;
+      // 处理历史数据
+    } else {
+      throw new Error(response.data.msg || "获取设备历史数据失败");
+    }
+  } catch (error) {
+    console.error("获取设备历史数据失败:", error);
+  }
+};
+
+const handleClickBtn = () => {
+  Taro.showToast({
+    title: "点击了按钮",
+    icon: "none",
+  });
+};
+
+const chatAI = async () => {
+  try {
+    const response = await axios({
+      method: "POST",
+      url: `http://localhost:3000/ai`,
+      data: {
+        type: options.find((opt) => opt.value == selectedOption.value)?.label,
+        value: dataSource.value,
+      },
+    });
+    if (response.data.code === 200) {
+      console.log(response.data);
+    }
+  } catch (error) {
+    console.error("获取设备历史数据失败:", error);
+  }
+};
 </script>
 
 <style scoped>
@@ -123,7 +170,7 @@ onMounted(() => {
   overflow: hidden;
   min-height: 100vh;
   background: linear-gradient(160deg, #0a0e17 0%, #1a2130 100%);
-  font-family: 'Roboto', 'PingFang SC', sans-serif;
+  font-family: "Roboto", "PingFang SC", sans-serif;
   color: #e0e0e0;
   font-size: 16px;
 }
@@ -151,7 +198,7 @@ onMounted(() => {
 }
 
 .header .title::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -10px;
   left: 50%;
@@ -160,5 +207,12 @@ onMounted(() => {
   height: 3px;
   background: linear-gradient(90deg, #3a7bd5 0%, #00d2ff 100%);
   border-radius: 3px;
+}
+.chart {
+  margin-top: 20px;
+}
+
+.btn {
+  margin-top: 40px;
 }
 </style>
