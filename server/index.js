@@ -65,7 +65,7 @@ app.post("/ai", async (req, res) => {
     ],
     model: "doubao-1-5-thinking-pro-250415",
   });
-  res.json(completion.choices[0].message);
+  res.json({ code: 200, data: completion.choices[0].message });
 });
 
 app.listen(PORT, () => {
