@@ -24,22 +24,34 @@
       v-model:visible="show"
       position="bottom"
       closeable
+      title="AI分析"
       round
-      :style="{ height: '50%' }"
-      style="background-color: #010101"
+      style="
+        background-color: #1c1c1c;
+        min-height: 50%;
+        padding: 12px 24px;
+        box-sizing: border-box;
+      "
     >
+      <div class="popup-title">AI分析</div>
+
       <Segmented
         v-model="selectedAiOption"
         :options="aiOptions"
         :block="true"
         @change="changeAiOption"
       />
-      <div v-if="selectedAiOption === 'result'" v-html="result?.content"></div>
       <div
+        class="font-panel"
+        v-if="selectedAiOption === 'result'"
+        v-html="result?.content"
+      ></div>
+      <div
+        class="font-panel"
         v-else-if="selectedAiOption === 'progress'"
         v-html="result?.reasoning_content"
       ></div>
-      <div v-else>网络异常，请稍后重试</div>
+      <div class="font-panel" v-else>网络异常，请稍后重试</div>
     </nut-popup>
   </div>
 </template>
@@ -182,7 +194,7 @@ const handleClickBtn = async () => {
   try {
     const response = await axios({
       method: "POST",
-      url: `http://localhost:3000/ai`,
+      url: `http://8.155.18.86:3000/ai`,
       data: {
         type: options.find((opt) => opt.value == selectedOption.value)?.label,
         value: dataSource.value,
@@ -249,5 +261,12 @@ const handleClickBtn = async () => {
 
 .btn {
   margin-top: 40px;
+}
+.popup-title {
+  font-size: 36px;
+}
+.font-panel {
+  margin-top: 24px;
+  font-size: 20px;
 }
 </style>
