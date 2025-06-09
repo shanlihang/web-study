@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import Taro, { getCurrentInstance } from '@tarojs/taro'
+import Taro, { getCurrentInstance, useReady } from '@tarojs/taro'
 import Segmented from '../../components/Segmented/index.vue'
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
@@ -41,19 +41,49 @@ const options = [
 ]
 // 设备配置
 const deviceConfig = ref<DeviceConfig>(defaultConfig)
-const canvas = ref(null)
 const backHome = () => {
   Taro.navigateBack({
     delta: 1 // 返回几层
   })
 }
-
 // 默认选中的值，将从 URL 参数获取
 const selectedOption = ref('Temp')
 
 // 存储路由参数
 const routeParams = ref<Record<string, string | undefined>>({})
 
+const handleChange = (value: string | number) => {
+  console.log('选中的值：', value)
+  // 当选项改变时，更新查询参数
+  getDeviceHistory(value as string)
+}
+const getDeviceHistory = async (identifier: string = selectedOption.value) => {
+  try {
+    const response = await axios({
+      method: 'GET',
+      url: `https://iot-api.heclouds.com/thingmodel/query-device-property-history`,
+      params: {
+        identifier,
+        product_id: deviceConfig.value.product_id,
+        device_name: deviceConfig.value.device_name,
+        start_time: dayjs().subtract(7, 'day').valueOf(),
+        end_time: dayjs().valueOf(),
+        limit: 100
+      },
+      headers: {
+        Authorization: decodeURIComponent(deviceConfig.value.key)
+      }
+    })
+    console.log(1111, response)
+    if (response.data.code === 0) {
+      // 处理历史数据
+    } else {
+      throw new Error(response.data.msg || '获取设备历史数据失败')
+    }
+  } catch (error) {
+    console.error('获取设备历史数据失败:', error)
+  }
+}
 // 在组件挂载时获取 URL 参数
 onMounted(() => {
   const instance = getCurrentInstance()
@@ -85,66 +115,6 @@ onMounted(() => {
     }
   }
 })
-
-const handleChange = (value: string | number) => {
-  console.log('选中的值：', value)
-  // 当选项改变时，更新查询参数
-  getDeviceHistory(value as string)
-}
-const getDeviceHistory = async (identifier: string = selectedOption.value) => {
-  try {
-    const response = await axios({
-      method: 'GET',
-      url: `https://iot-api.heclouds.com/thingmodel/query-device-property-history`,
-      params: {
-        identifier,
-        product_id: deviceConfig.value.product_id,
-        device_name: deviceConfig.value.device_name,
-        start_time: dayjs().subtract(7, 'day').valueOf(),
-        end_time: dayjs().valueOf(),
-        limit: 100
-      },
-      headers: {
-        Authorization: decodeURIComponent(deviceConfig.value.key)
-      }
-    })
-    console.log(1111, response)
-    if (response.data.code === 0) {
-      const echartComponentInstance = canvas.value
-      const option = {
-        tooltip: {
-          trigger: 'axis',
-          axisPointer: {
-            // 坐标轴指示器，坐标轴触发有效
-            type: 'shadow' // 默认为直线，可选为：'line' | 'shadow'
-          }
-        },
-        xAxis: {
-          type: 'category',
-          data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-        },
-        yAxis: {
-          type: 'value'
-        },
-        series: [
-          {
-            data: [120, 200, 150, 80, 70, 110, 130],
-            type: 'bar'
-          }
-        ]
-      }
-
-      Taro.nextTick(() => {
-        echartComponentInstance.refresh(option)
-      })
-      // 处理历史数据
-    } else {
-      throw new Error(response.data.msg || '获取设备历史数据失败')
-    }
-  } catch (error) {
-    console.error('获取设备历史数据失败:', error)
-  }
-}
 </script>
 
 <style scoped>
