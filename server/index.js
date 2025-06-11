@@ -35,7 +35,7 @@ app.post("/send-email", async (req, res) => {
   try {
     await transporter.sendMail({
       from: '"独居老人环境监测系统" <67490009@qq.com>',
-      to: "slh_wldz@163.com", //接收者
+      to: "2127693973@qq.com", //接收者
       subject: "异常数据警报", //标题
       text, //内容
     });
