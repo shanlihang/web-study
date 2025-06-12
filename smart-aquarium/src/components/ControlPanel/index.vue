@@ -4,63 +4,110 @@
     <view class="title">
       <view>控制面板</view>
       <view>
-        <nut-radio-group v-model="control" direction="horizontal" @change="onChange">
+        <nut-radio-group
+          v-model="control"
+          direction="horizontal"
+          @change="onChange"
+        >
           <nut-radio :label="0">手动</nut-radio>
           <nut-radio :label="1">自动</nut-radio>
         </nut-radio-group>
-        <!-- <nut-button v-if="control" class="left-button" size="mini" type="primary"
-          @click="control = false">手动控制</nut-button>
-        <nut-button v-if="!control" class="left-button" size="mini" type="primary"
-          @click="control = true">自动控制</nut-button> -->
-        <nut-button class="right-button" plain type="info" size="mini" @click="show = true">阈值设置</nut-button>
+        <nut-button
+          class="right-button"
+          plain
+          type="info"
+          size="mini"
+          @click="show = true"
+          >阈值设置</nut-button
+        >
       </view>
     </view>
     <nut-cell-group>
       <nut-cell title="升温">
         <template #link>
-          <nut-switch :disabled="props.control" v-model="props.HeatSwitch"
-            @change="(value) => change({ HeatSwitch: value })" />
+          <nut-switch
+            :disabled="props.control"
+            v-model="props.HeatSwitch"
+            @change="(value) => change({ HeatSwitch: value })"
+          />
         </template>
       </nut-cell>
       <nut-cell title="光照">
         <template #link>
-          <nut-switch :disabled="props.control" v-model="props.LightSwitch"
-            @change="(value) => change({ LightSwitch: value })" />
+          <nut-switch
+            :disabled="props.control"
+            v-model="props.LightSwitch"
+            @change="(value) => change({ LightSwitch: value })"
+          />
         </template>
       </nut-cell>
       <nut-cell title="水循环">
         <template #link>
-          <nut-switch :disabled="props.control" v-model="props.Pump" @change="(value) => change({ Pump: value })" />
+          <nut-switch
+            :disabled="props.control"
+            v-model="props.Pump"
+            @change="(value) => change({ Pump: value })"
+          />
         </template>
       </nut-cell>
       <nut-cell title="喂食">
         <template #link>
-          <nut-button plain type="primary" @click="
-            () =>
-              change({
-                Motor: true,
-              })
-          " size="mini">喂食</nut-button>
+          <nut-button
+            plain
+            type="primary"
+            @click="
+              () =>
+                change({
+                  Motor: true,
+                })
+            "
+            size="mini"
+            >喂食</nut-button
+          >
         </template>
       </nut-cell>
     </nut-cell-group>
 
-    <nut-popup v-model:visible="show" position="bottom" closeable round :style="{ height: '350px' }">
+    <nut-popup
+      v-model:visible="show"
+      position="bottom"
+      closeable
+      round
+      :style="{ height: '350px' }"
+    >
       <view class="drawer-title">阈值设置</view>
       <view class="cell">
         <view class="label">水温</view>
-        <nut-range v-model="data.temperatureRange" :max="100" :min="0" range></nut-range>
+        <nut-range
+          v-model="data.temperatureRange"
+          :max="100"
+          :min="0"
+          range
+        ></nut-range>
       </view>
       <view class="cell">
         <view class="label">水质</view>
-        <nut-range v-model="data.tdsRange" range :max="800" :min="0"></nut-range>
+        <nut-range
+          v-model="data.tdsRange"
+          range
+          :max="800"
+          :min="0"
+        ></nut-range>
       </view>
       <view class="cell">
         <view class="label">光照</view>
-        <nut-range v-model="data.lightRange" range :max="5000" :min="0"></nut-range>
+        <nut-range
+          v-model="data.lightRange"
+          range
+          :max="5000"
+          :min="0"
+        ></nut-range>
       </view>
 
-      <view class="btn"><nut-button plain type="primary" @click="show = false">取消</nut-button>
+      <view class="btn"
+        ><nut-button plain type="primary" @click="show = false"
+          >取消</nut-button
+        >
         <nut-button plain type="info" @click="updateRangeList">确定</nut-button>
       </view>
     </nut-popup>
@@ -116,8 +163,8 @@ const data = reactive({
   lightRange: [0, 0],
 });
 const onChange = (v: string) => {
-  emit("autoChange", v)
-}
+  emit("autoChange", v);
+};
 const updateRangeList = () => {
   emit("changeRange", {
     temperatureRange: {
