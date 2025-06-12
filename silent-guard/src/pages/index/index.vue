@@ -159,7 +159,7 @@ const dictionary = {
 };
 
 const intervalId = ref(null);
-const timeRange = ref(5000);
+const timeRange = ref(3000);
 
 const visible = ref(false);
 
@@ -390,10 +390,10 @@ const queryDeviceProperty = async () => {
 onMounted(() => {
   getDeviceStatus();
   queryDeviceProperty();
-  // intervalId.value = setInterval(() => {
-  //   getDeviceStatus()
-  //   queryDeviceProperty()
-  // }, timeRange.value)
+  intervalId.value = setInterval(() => {
+    getDeviceStatus();
+    queryDeviceProperty();
+  }, timeRange.value);
 });
 
 onUnmounted(() => {
